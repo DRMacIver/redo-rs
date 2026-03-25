@@ -15,6 +15,22 @@ Cargo.lock
 /redo/sh
 /redo/py
 
+# Auto-created symlinks for multi-call binary
+/redo-ifchange
+/redo-ifcreate
+/redo-always
+/redo-stamp
+/redo-log
+/redo-whichdo
+/redo-targets
+/redo-sources
+/redo-ood
+/redo-unlocked
+
+# Redo build stamp files
+/release
+/debug
+
 # Flush-cache is generated
 /t/flush-cache
 t/110-compile/.claude/

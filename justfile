@@ -62,7 +62,11 @@ build:
 build-debug:
     cargo build
 
+# Bootstrap: cargo builds release, release-redo builds debug, debug-redo rebuilds release
+bootstrap:
+    ./bootstrap.sh
+
 # Clean build artifacts and test state
 clean:
     cargo clean
-    rm -rf .redo t/*/.redo redo/sh redo/py t/flush-cache bin/
+    rm -rf .redo t/*/.redo redo/sh redo/py t/flush-cache bin/ release debug
