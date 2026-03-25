@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --release
+      - run: cargo build
+
+  smoke:
+    name: Smoke tests
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Debug smoke tests
+        run: cargo test --test smoke -- --test-threads=1
+      - name: Release smoke tests
+        run: cargo test --release --test smoke -- --test-threads=1
+
+  test-suite:
+    name: redo test suite
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build release
+        run: cargo build --release
+      - name: Set up test helpers
+        run: |
+          mkdir -p redo
+          ln -sf /bin/sh redo/sh
+          printf '#!/bin/sh\nexec python3 "$@"\n' > redo/py
+          chmod +x redo/py
+          printf '#!/usr/bin/env python3\n' | cat - t/flush-cache.in > t/flush-cache
+          chmod +x t/flush-cache
+      - name: Run test suite
+        run: |
+          export PATH="$PWD/target/release:$PATH"
+          export REDO_LOG=0
+          PASS=0; FAIL=0; SKIP=0; TOTAL=0
+          for d in t/[0-9s][0-9][0-9]*/; do
+            test_name=$(basename "$d")
+            TOTAL=$((TOTAL+1))
+            case "$test_name" in 110-*|111-*|999-*) echo "  SKIP: $test_name"; SKIP=$((SKIP+1)); continue;; esac
+            printf "  %-30s " "$test_name"
+            cd "$d"; rm -rf ../../.redo
+            if timeout 60 redo all >/dev/null 2>&1; then
+              echo "ok"
+              PASS=$((PASS+1))
+            else
+              echo "FAIL"
+              FAIL=$((FAIL+1))
+            fi
+            cd ../../
+          done
+          echo ""
+          echo "Suite: $PASS passed, $FAIL failed, $SKIP skipped (of $TOTAL)"
+          [ "$FAIL" -eq 0 ]
+
+  regression:
+    name: Regression tests
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Clone Python redo (for comparison)
+        run: git clone --depth 1 https://github.com/apenwarr/redo.git /tmp/apenwarr-redo
+      - name: Set up Python redo version shim
+        run: |
+          mkdir -p /tmp/apenwarr-redo/redo/version
+          printf "COMMIT = 'test'\nTAG = 'test-0.0'\nDATE = '2024-01-01'\n" \
+            > /tmp/apenwarr-redo/redo/version/_version.py
+      - name: Run regression tests
+        run: cargo test --test target_dir_collision -- --test-threads=1
+
+  equivalence:
+    name: Equivalence tests
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: astral-sh/setup-uv@v6
+      - name: Clone Python redo (for comparison)
+        run: git clone --depth 1 https://github.com/apenwarr/redo.git /tmp/apenwarr-redo
+      - name: Set up Python redo version shim
+        run: |
+          mkdir -p /tmp/apenwarr-redo/redo/version
+          printf "COMMIT = 'test'\nTAG = 'test-0.0'\nDATE = '2024-01-01'\n" \
+            > /tmp/apenwarr-redo/redo/version/_version.py
+      - name: Run equivalence tests
+        run: cargo test --test equivalence -- --test-threads=1
