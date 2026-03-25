@@ -15,11 +15,13 @@ use nix::fcntl::{fcntl, FcntlArg, FdFlag};
 
 /// Exception-like mechanism for immediate return with a specific exit code.
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct ImmediateReturn {
     pub rv: i32,
 }
 
 impl ImmediateReturn {
+    #[allow(dead_code)]
     pub fn new(rv: i32) -> Self {
         ImmediateReturn { rv }
     }

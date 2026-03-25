@@ -218,10 +218,6 @@ fn pretty_write(s: &str, to_stdout: bool) {
     let _ = out.flush();
 }
 
-struct SimpleRegex {
-    pattern: String,
-}
-
 struct SimpleCaptures<'a> {
     full: &'a str,
     groups: Vec<&'a str>,

@@ -17,3 +17,4 @@ Cargo.lock
 
 # Flush-cache is generated
 /t/flush-cache
+t/110-compile/.claude/

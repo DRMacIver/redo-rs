@@ -18,6 +18,9 @@ use std::os::unix::fs::MetadataExt;
 use std::sync::Mutex;
 
 pub const SCHEMA_VER: i32 = 2;
+/// Timeout for SQLite connections (seconds). Used by the Python version;
+/// rusqlite handles this via its own timeout parameter.
+#[allow(dead_code)]
 pub const TIMEOUT: u32 = 60;
 
 pub const ALWAYS: &str = "//ALWAYS";
@@ -30,7 +33,6 @@ static DB: Mutex<Option<Connection>> = Mutex::new(None);
 pub static LOCKFILE_FD: Mutex<i32> = Mutex::new(-1);
 static WROTE: Mutex<i32> = Mutex::new(0);
 static INSANE: Mutex<Option<bool>> = Mutex::new(None);
-static CWD_CACHE: Mutex<Option<String>> = Mutex::new(None);
 
 fn connect(dbfile: &str, locks_broken: bool) -> Connection {
     let db = Connection::open(dbfile).expect("failed to open database");
@@ -319,12 +321,19 @@ pub fn target_relpath(t: &str) -> String {
             .to_string()
     };
 
-    let target_abs = format!("{}/{}", dofile_dir, target);
-    let target_dir = std::path::Path::new(&target_abs)
-        .parent()
-        .unwrap_or(std::path::Path::new("/"))
-        .to_string_lossy()
-        .to_string();
+    // Python: os.path.dirname(os.path.join(dofile_dir, target))
+    // When target is empty, Python's join adds trailing slash and dirname
+    // returns the same dir. Rust's Path::parent strips the last component.
+    let target_dir = if target.is_empty() {
+        dofile_dir.clone()
+    } else {
+        let target_abs = format!("{}/{}", dofile_dir, target);
+        std::path::Path::new(&target_abs)
+            .parent()
+            .unwrap_or(std::path::Path::new("/"))
+            .to_string_lossy()
+            .to_string()
+    };
     let target_dir_abs = std::fs::canonicalize(&target_dir)
         .unwrap_or_else(|_| std::path::PathBuf::from(&target_dir))
         .to_string_lossy()

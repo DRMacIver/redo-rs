@@ -36,7 +36,7 @@ fn should_build(t: &str) -> (bool, builder::ShouldBuildResult) {
 }
 
 pub fn main() {
-    let mut rv = 202;
+    let rv;
     let targets: Vec<String> = std::env::args().skip(1).collect();
     state::init(&targets);
 

@@ -119,6 +119,7 @@ struct OptDef {
     short_name: Option<char>,
     has_param: bool,
     default: OptValue,
+    #[allow(dead_code)]
     negatable: bool,
 }
 

@@ -317,7 +317,11 @@ fn catlog(
                             logs::meta_with_pid("do", &relname, Some(pid));
                         }
                         if recursive {
-                            let sub_t = format!("{}/{}", mydir, text);
+                            let sub_t = if mydir.is_empty() {
+                                text.to_string()
+                            } else {
+                                format!("{}/{}", mydir, text)
+                            };
                             let got = catlog(
                                 &sub_t, topdir, already, depth, recursive, follow, details,
                                 unchanged_opt, debug_locks, show_status, start_time,
@@ -340,7 +344,11 @@ fn catlog(
                         lines_written += 1;
                     }
                     if recursive {
-                        let sub_t = format!("{}/{}", mydir, text);
+                        let sub_t = if mydir.is_empty() {
+                                text.to_string()
+                            } else {
+                                format!("{}/{}", mydir, text)
+                            };
                         let got = catlog(
                             &sub_t, topdir, already, depth, recursive, follow, details,
                             unchanged_opt, debug_locks, show_status, start_time,
