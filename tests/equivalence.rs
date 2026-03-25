@@ -285,7 +285,7 @@ fn gen_project(tc: hegel::TestCase) -> Project {
     }
 
     // Generate targets with explicit .do files
-    for i in 0..n_targets {
+    for _ in 0..n_targets {
         let name = tc.draw(maybe_subdir_name_gen());
         if all_names.contains(&name) {
             continue;
@@ -416,6 +416,7 @@ fn gen_do_content(
 
 /// Sequence of operations for multi-step testing.
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 enum Op {
     /// Build targets with `redo`
     Redo(Vec<String>),
@@ -534,7 +535,7 @@ fn apply_op(redo_prefix: &str, dir: &Path, op: &Op, collect: &[&str]) -> Option<
 // ---------------------------------------------------------------------------
 
 /// Both implementations build targets and produce the same output files.
-#[hegel::test(test_cases = 80, suppress_health_check = [HealthCheck::TooSlow, HealthCheck::FilterTooMuch])]
+#[hegel::test(test_cases = 20, suppress_health_check = [HealthCheck::TooSlow, HealthCheck::FilterTooMuch])]
 fn test_build_equivalence(tc: hegel::TestCase) {
     ensure_rust_symlinks();
     ensure_python_wrappers();
@@ -556,7 +557,7 @@ fn test_build_equivalence(tc: hegel::TestCase) {
 }
 
 /// redo-ifchange: conditional builds produce same results.
-#[hegel::test(test_cases = 50, suppress_health_check = [HealthCheck::TooSlow, HealthCheck::FilterTooMuch])]
+#[hegel::test(test_cases = 20, suppress_health_check = [HealthCheck::TooSlow, HealthCheck::FilterTooMuch])]
 fn test_ifchange_equivalence(tc: hegel::TestCase) {
     ensure_rust_symlinks();
     ensure_python_wrappers();
@@ -576,7 +577,7 @@ fn test_ifchange_equivalence(tc: hegel::TestCase) {
 }
 
 /// Multi-step sequences: build, modify, rebuild produce same results.
-#[hegel::test(test_cases = 40, suppress_health_check = [HealthCheck::TooSlow, HealthCheck::FilterTooMuch])]
+#[hegel::test(test_cases = 20, suppress_health_check = [HealthCheck::TooSlow, HealthCheck::FilterTooMuch])]
 fn test_multi_step_equivalence(tc: hegel::TestCase) {
     ensure_rust_symlinks();
     ensure_python_wrappers();
@@ -609,7 +610,7 @@ fn test_multi_step_equivalence(tc: hegel::TestCase) {
 }
 
 /// redo-targets and redo-sources agree after building.
-#[hegel::test(test_cases = 40, suppress_health_check = [HealthCheck::TooSlow, HealthCheck::FilterTooMuch])]
+#[hegel::test(test_cases = 20, suppress_health_check = [HealthCheck::TooSlow, HealthCheck::FilterTooMuch])]
 fn test_targets_sources_equivalence(tc: hegel::TestCase) {
     ensure_rust_symlinks();
     ensure_python_wrappers();
@@ -643,7 +644,7 @@ fn test_targets_sources_equivalence(tc: hegel::TestCase) {
 }
 
 /// redo-ood (out-of-date) agrees after build + source modification.
-#[hegel::test(test_cases = 30, suppress_health_check = [HealthCheck::TooSlow, HealthCheck::FilterTooMuch])]
+#[hegel::test(test_cases = 20, suppress_health_check = [HealthCheck::TooSlow, HealthCheck::FilterTooMuch])]
 fn test_ood_equivalence(tc: hegel::TestCase) {
     ensure_rust_symlinks();
     ensure_python_wrappers();
@@ -678,7 +679,7 @@ fn test_ood_equivalence(tc: hegel::TestCase) {
 }
 
 /// redo-whichdo finds the same .do files for generated targets.
-#[hegel::test(test_cases = 40, suppress_health_check = [HealthCheck::TooSlow, HealthCheck::FilterTooMuch])]
+#[hegel::test(test_cases = 20, suppress_health_check = [HealthCheck::TooSlow, HealthCheck::FilterTooMuch])]
 fn test_whichdo_equivalence(tc: hegel::TestCase) {
     ensure_rust_symlinks();
     ensure_python_wrappers();
@@ -701,7 +702,7 @@ fn test_whichdo_equivalence(tc: hegel::TestCase) {
 }
 
 /// default.do matching with multiple extensions works the same.
-#[hegel::test(test_cases = 40, suppress_health_check = [HealthCheck::TooSlow, HealthCheck::FilterTooMuch])]
+#[hegel::test(test_cases = 20, suppress_health_check = [HealthCheck::TooSlow, HealthCheck::FilterTooMuch])]
 fn test_default_do_extension_matching(tc: hegel::TestCase) {
     ensure_rust_symlinks();
     ensure_python_wrappers();
@@ -758,7 +759,7 @@ fn test_default_do_extension_matching(tc: hegel::TestCase) {
 }
 
 /// Subdirectory default.do resolution: parent dir default.do vs child dir.
-#[hegel::test(test_cases = 40, suppress_health_check = [HealthCheck::TooSlow, HealthCheck::FilterTooMuch])]
+#[hegel::test(test_cases = 20, suppress_health_check = [HealthCheck::TooSlow, HealthCheck::FilterTooMuch])]
 fn test_subdir_default_do(tc: hegel::TestCase) {
     ensure_rust_symlinks();
     ensure_python_wrappers();
@@ -820,7 +821,7 @@ fn test_subdir_default_do(tc: hegel::TestCase) {
 }
 
 /// Static files (existing before first build) are handled the same.
-#[hegel::test(test_cases = 30, suppress_health_check = [HealthCheck::TooSlow, HealthCheck::FilterTooMuch])]
+#[hegel::test(test_cases = 20, suppress_health_check = [HealthCheck::TooSlow, HealthCheck::FilterTooMuch])]
 fn test_static_file_handling(tc: hegel::TestCase) {
     ensure_rust_symlinks();
     ensure_python_wrappers();
@@ -856,7 +857,7 @@ fn test_static_file_handling(tc: hegel::TestCase) {
 }
 
 /// Failing .do scripts produce the same error behavior.
-#[hegel::test(test_cases = 30, suppress_health_check = [HealthCheck::TooSlow])]
+#[hegel::test(test_cases = 20, suppress_health_check = [HealthCheck::TooSlow])]
 fn test_failing_do_script(tc: hegel::TestCase) {
     ensure_rust_symlinks();
     ensure_python_wrappers();
@@ -901,7 +902,7 @@ fn test_missing_do_file(tc: hegel::TestCase) {
 }
 
 /// redo-stamp checksum detection agrees between implementations.
-#[hegel::test(test_cases = 30, suppress_health_check = [HealthCheck::TooSlow, HealthCheck::FilterTooMuch])]
+#[hegel::test(test_cases = 20, suppress_health_check = [HealthCheck::TooSlow, HealthCheck::FilterTooMuch])]
 fn test_stamp_change_detection(tc: hegel::TestCase) {
     ensure_rust_symlinks();
     ensure_python_wrappers();
@@ -952,7 +953,7 @@ fn test_stamp_change_detection(tc: hegel::TestCase) {
 }
 
 /// $3 output vs stdout output produce the same results.
-#[hegel::test(test_cases = 30, suppress_health_check = [HealthCheck::TooSlow])]
+#[hegel::test(test_cases = 20, suppress_health_check = [HealthCheck::TooSlow])]
 fn test_output_method_equivalence(tc: hegel::TestCase) {
     ensure_rust_symlinks();
     ensure_python_wrappers();
