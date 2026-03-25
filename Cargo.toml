@@ -9,7 +9,6 @@ description = "A Rust port of apenwarr/redo - a recursive build system"
 rusqlite = { version = "0.31", features = ["bundled"] }
 sha1_smol = "1.0"
 nix = { version = "0.28", features = ["process", "signal", "fs", "term", "poll", "ioctl"] }
-libc = "0.2"
 
 [dev-dependencies]
 hegeltest = "0.2.4"

@@ -640,14 +640,12 @@ fn start_build(
 }
 
 fn do_unlock(lockfile: i32, fid: i64) {
-    let fl = libc::flock {
-        l_type: libc::F_UNLCK as i16,
-        l_whence: libc::SEEK_SET as i16,
-        l_start: fid as libc::off_t,
+    let fl = nix::libc::flock {
+        l_type: nix::libc::F_UNLCK as i16,
+        l_whence: nix::libc::SEEK_SET as i16,
+        l_start: fid as nix::libc::off_t,
         l_len: 1,
         l_pid: 0,
-        #[cfg(target_os = "linux")]
-        l_sysid: 0,
     };
     let _ = fcntl(lockfile, FcntlArg::F_SETLK(&fl));
 }

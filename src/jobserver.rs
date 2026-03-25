@@ -270,7 +270,7 @@ fn wait_internal(want_token: bool, max_delay: Option<f64>) {
 
     let mut timeout_val = max_delay.map(|d| {
         let secs = d as i64;
-        let usecs = ((d - secs as f64) * 1_000_000.0) as i32;
+        let usecs = ((d - secs as f64) * 1_000_000.0) as nix::sys::time::suseconds_t;
         TimeVal::new(secs, usecs)
     });
 

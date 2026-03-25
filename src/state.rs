@@ -888,18 +888,16 @@ enum LockType {
 
 fn do_lockf(fd: i32, lock_type: LockType, nonblock: bool, len: i64, start: i64) -> bool {
     // We use libc types for the flock struct since nix::fcntl::FcntlArg::F_SETLK requires it
-    let fl = libc::flock {
+    let fl = nix::libc::flock {
         l_type: match lock_type {
-            LockType::Read => libc::F_RDLCK as i16,
-            LockType::Write => libc::F_WRLCK as i16,
-            LockType::Unlock => libc::F_UNLCK as i16,
+            LockType::Read => nix::libc::F_RDLCK as i16,
+            LockType::Write => nix::libc::F_WRLCK as i16,
+            LockType::Unlock => nix::libc::F_UNLCK as i16,
         },
-        l_whence: libc::SEEK_SET as i16,
-        l_start: start as libc::off_t,
-        l_len: len as libc::off_t,
+        l_whence: nix::libc::SEEK_SET as i16,
+        l_start: start as nix::libc::off_t,
+        l_len: len as nix::libc::off_t,
         l_pid: 0,
-        #[cfg(target_os = "linux")]
-        l_sysid: 0,
     };
     let arg = if lock_type == LockType::Unlock || nonblock {
         FcntlArg::F_SETLK(&fl)
