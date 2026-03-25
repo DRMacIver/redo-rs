@@ -122,7 +122,10 @@ pub fn init(targets: &[String]) {
         if std::env::var("REDO").unwrap_or_default().is_empty() {
             *tl = true;
             let exe = std::env::args().next().unwrap_or_default();
-            let abs_exe = std::fs::canonicalize(&exe)
+            // Prefer current_exe() which gives the actual binary path,
+            // even when invoked via PATH without an absolute path.
+            let abs_exe = std::env::current_exe()
+                .or_else(|_| std::fs::canonicalize(&exe))
                 .unwrap_or_else(|_| std::path::PathBuf::from(&exe));
             let real_exe = std::fs::canonicalize(&abs_exe).unwrap_or(abs_exe.clone());
 
