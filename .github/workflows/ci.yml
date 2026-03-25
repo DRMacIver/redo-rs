@@ -43,6 +43,7 @@ jobs:
     needs: build
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
@@ -51,6 +52,11 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Build release
         run: cargo build --release
+      - name: Install timeout (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install coreutils
+          sudo ln -sf "$(which gtimeout)" /usr/local/bin/timeout
       - name: Set up test helpers
         run: |
           mkdir -p redo
@@ -60,10 +66,6 @@ jobs:
           echo '#!/usr/bin/env python3' > t/flush-cache
           cat t/flush-cache.in >> t/flush-cache
           chmod +x t/flush-cache
-          # Verify helpers exist
-          test -x redo/py && echo "redo/py OK" || echo "redo/py MISSING"
-          test -x t/flush-cache && echo "flush-cache OK" || echo "flush-cache MISSING"
-          head -1 t/flush-cache
       - name: Run test suite
         run: |
           export PATH="$PWD/target/release:$PATH"
