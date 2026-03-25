@@ -6,7 +6,9 @@ Cargo.lock
 
 # Test artifacts generated at runtime
 /t/*/log
-/t/*/shelltest.*
+/t/*/shelltest.failed
+/t/*/shelltest.warned
+/t/*/shelltest.tmp
 /t/*/shlink
 /t/broken
 /t/shellfile
