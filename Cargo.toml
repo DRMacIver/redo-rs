@@ -12,7 +12,7 @@ nix = { version = "0.28", features = ["process", "signal", "fs", "term", "poll",
 libc = "0.2"
 
 [dev-dependencies]
-hegel = { git = "https://github.com/hegeldev/hegel-rust", package = "hegeltest" }
+hegeltest = "0.2.4"
 
 [profile.release]
 opt-level = 2
