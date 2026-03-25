@@ -57,31 +57,41 @@ jobs:
           ln -sf /bin/sh redo/sh
           printf '#!/bin/sh\nexec python3 "$@"\n' > redo/py
           chmod +x redo/py
-          printf '#!/usr/bin/env python3\n' | cat - t/flush-cache.in > t/flush-cache
+          echo '#!/usr/bin/env python3' > t/flush-cache
+          cat t/flush-cache.in >> t/flush-cache
           chmod +x t/flush-cache
+          # Verify helpers exist
+          test -x redo/py && echo "redo/py OK" || echo "redo/py MISSING"
+          test -x t/flush-cache && echo "flush-cache OK" || echo "flush-cache MISSING"
+          head -1 t/flush-cache
       - name: Run test suite
         run: |
           export PATH="$PWD/target/release:$PATH"
           export REDO_LOG=0
-          PASS=0; FAIL=0; SKIP=0; TOTAL=0
+          PASS=0; FAIL=0; SKIP=0; TOTAL=0; FAILURES=""
           for d in t/[0-9s][0-9][0-9]*/; do
             test_name=$(basename "$d")
             TOTAL=$((TOTAL+1))
             case "$test_name" in 110-*|111-*|999-*) echo "  SKIP: $test_name"; SKIP=$((SKIP+1)); continue;; esac
             printf "  %-30s " "$test_name"
             cd "$d"; rm -rf ../../.redo
-            if timeout 60 redo all >/dev/null 2>&1; then
+            if timeout 60 redo all >/dev/null 2>/tmp/redo-test-err; then
               echo "ok"
               PASS=$((PASS+1))
             else
               echo "FAIL"
               FAIL=$((FAIL+1))
+              FAILURES="$FAILURES $test_name"
+              echo "    stderr: $(head -5 /tmp/redo-test-err)"
             fi
             cd ../../
           done
           echo ""
           echo "Suite: $PASS passed, $FAIL failed, $SKIP skipped (of $TOTAL)"
-          [ "$FAIL" -eq 0 ]
+          if [ "$FAIL" -ne 0 ]; then
+            echo "Failed:$FAILURES"
+            exit 1
+          fi
 
   regression:
     name: Regression tests
