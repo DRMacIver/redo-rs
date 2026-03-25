@@ -19,3 +19,4 @@ Cargo.lock
 /t/flush-cache
 t/110-compile/.claude/
 .hegel/
+.claude/settings.local.json
