@@ -77,14 +77,14 @@ jobs:
             case "$test_name" in 110-*|111-*|999-*) echo "  SKIP: $test_name"; SKIP=$((SKIP+1)); continue;; esac
             printf "  %-30s " "$test_name"
             cd "$d"; rm -rf ../../.redo
-            if timeout 60 redo all >/dev/null 2>/tmp/redo-test-err; then
+            if timeout 60 redo all >/tmp/redo-test-out 2>&1; then
               echo "ok"
               PASS=$((PASS+1))
             else
-              echo "FAIL"
+              echo "FAIL (exit $?)"
               FAIL=$((FAIL+1))
               FAILURES="$FAILURES $test_name"
-              echo "    stderr: $(head -5 /tmp/redo-test-err)"
+              tail -10 /tmp/redo-test-out | sed 's/^/    /'
             fi
             cd ../../
           done
