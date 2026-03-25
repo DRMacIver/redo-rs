@@ -11,5 +11,8 @@ sha1_smol = "1.0"
 nix = { version = "0.28", features = ["process", "signal", "fs", "term", "poll", "ioctl"] }
 libc = "0.2"
 
+[dev-dependencies]
+hegel = { git = "https://github.com/hegeldev/hegel-rust", package = "hegeltest" }
+
 [profile.release]
 opt-level = 2
