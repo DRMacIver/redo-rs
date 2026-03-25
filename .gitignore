@@ -1,0 +1,19 @@
+/target/
+.redo/
+*.redo.tmp
+.claude-reliability/
+Cargo.lock
+
+# Test artifacts generated at runtime
+/t/*/log
+/t/*/shelltest.*
+/t/*/shlink
+/t/broken
+/t/shellfile
+/t/shellfail
+/bin/
+/redo/sh
+/redo/py
+
+# Flush-cache is generated
+/t/flush-cache

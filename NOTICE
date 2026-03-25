@@ -1,0 +1,14 @@
+redo-rs - A Rust port of the redo build system
+Copyright 2024 redo-rs contributors
+
+This software is a derivative work based on apenwarr/redo:
+  https://github.com/apenwarr/redo
+
+Original redo implementation:
+  Copyright 2010-2018 Avery Pennarun and contributors
+  Licensed under the Apache License, Version 2.0
+
+The original redo concept is based on Daniel J. Bernstein's design.
+
+The test suite (t/ directory) is adapted from the original apenwarr/redo
+project and retains its original copyright and license.
