@@ -148,6 +148,10 @@ pub fn init(targets: &[String]) {
                     }
                 }
             }
+            // Ensure sibling symlinks exist so execvp("redo-log") etc. work.
+            // This is needed because we're a single multi-call binary.
+            ensure_sibling_symlinks(&real_exe);
+
             let path = std::env::var("PATH").unwrap_or_default();
             let new_path = format!("{}:{}", dirs.join(":"), path);
             std::env::set_var("PATH", new_path);
@@ -225,6 +229,47 @@ fn common_prefix(paths: &[String]) -> String {
         }
     }
     prefix
+}
+
+/// Create symlinks for all redo sub-commands next to the main binary.
+/// Since we're a single multi-call binary, all commands are the same
+/// executable invoked under different names.
+fn ensure_sibling_symlinks(exe_path: &std::path::Path) {
+    // Only create symlinks if we have a resolved absolute path
+    if !exe_path.is_absolute() {
+        return;
+    }
+    let dir = match exe_path.parent() {
+        Some(d) if !d.as_os_str().is_empty() => d,
+        _ => return,
+    };
+    let exe_name = exe_path
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_default();
+    // Don't create symlinks if the binary itself is already a symlink
+    // target (e.g., we're running as "redo-ifchange" which points to "redo").
+    // Only create from the canonical "redo" binary.
+    if exe_name != "redo" {
+        return;
+    }
+    for cmd in &[
+        "redo-ifchange",
+        "redo-ifcreate",
+        "redo-always",
+        "redo-stamp",
+        "redo-log",
+        "redo-whichdo",
+        "redo-targets",
+        "redo-sources",
+        "redo-ood",
+        "redo-unlocked",
+    ] {
+        let link_path = dir.join(cmd);
+        if !link_path.exists() {
+            let _ = std::os::unix::fs::symlink(exe_path, &link_path);
+        }
+    }
 }
 
 pub fn mark_locks_broken() {
