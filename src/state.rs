@@ -155,13 +155,12 @@ pub fn init_db() {
         std::env::set_var("REDO_RUNID", new_runid.to_string());
     }
 
+    // Commit any outstanding work (schema creation, runid) and start
+    // a fresh transaction.  All subsequent db_write calls happen inside
+    // this transaction until commit() or rollback() is called.
     let db = db_guard.as_ref().unwrap();
-    db.execute_batch("COMMIT; BEGIN").unwrap_or_else(|_| {
-        // If no transaction is active, just begin one
-        let _ = db.execute_batch("BEGIN");
-    });
-    // Actually just commit any implicit transaction
-    let _ = db.execute_batch("");
+    let _ = db.execute_batch("COMMIT");
+    let _ = db.execute_batch("BEGIN");
 }
 
 pub fn init(targets: &[String]) {
@@ -176,12 +175,12 @@ pub fn commit() {
     if *INSANE.lock().unwrap() == Some(true) {
         return;
     }
-    ensure_db();
     let mut wrote = WROTE.lock().unwrap();
     if *wrote > 0 {
         let db_guard = DB.lock().unwrap();
         if let Some(db) = db_guard.as_ref() {
-            let _ = db.execute_batch("COMMIT; BEGIN");
+            let _ = db.execute_batch("COMMIT");
+            let _ = db.execute_batch("BEGIN");
         }
         *wrote = 0;
     }
@@ -195,7 +194,8 @@ pub fn rollback() {
     if *wrote > 0 {
         let db_guard = DB.lock().unwrap();
         if let Some(db) = db_guard.as_ref() {
-            let _ = db.execute_batch("ROLLBACK; BEGIN");
+            let _ = db.execute_batch("ROLLBACK");
+            let _ = db.execute_batch("BEGIN");
         }
         *wrote = 0;
     }
@@ -384,43 +384,52 @@ impl File {
 
     fn query_by_name(name: &str, allow_add: bool) -> Self {
         ensure_db();
-        let db_guard = DB.lock().unwrap();
-        let db = db_guard.as_ref().expect("database not initialized");
 
-        let result: Option<Self> = db
-            .query_row(
-                "select rowid, name, is_generated, is_override, \
-                 checked_runid, changed_runid, failed_runid, stamp, csum \
-                 from Files where name=?1",
-                params![name],
-                |row| {
-                    Ok(File {
-                        id: row.get(0)?,
-                        name: row.get::<_, String>(1)?,
-                        is_generated: row.get::<_, Option<i64>>(2)?.unwrap_or(0) != 0,
-                        is_override: row.get::<_, Option<i64>>(3)?.unwrap_or(0) != 0,
-                        checked_runid: row.get(4)?,
-                        changed_runid: row.get(5)?,
-                        failed_runid: row.get(6)?,
-                        stamp: row.get(7)?,
-                        csum: row.get(8)?,
-                    })
-                },
-            )
-            .ok();
+        // First attempt: look up existing entry
+        {
+            let db_guard = DB.lock().unwrap();
+            let db = db_guard.as_ref().expect("database not initialized");
+            let result: Option<Self> = db
+                .query_row(
+                    "select rowid, name, is_generated, is_override, \
+                     checked_runid, changed_runid, failed_runid, stamp, csum \
+                     from Files where name=?1",
+                    params![name],
+                    |row| {
+                        Ok(File {
+                            id: row.get(0)?,
+                            name: row.get::<_, String>(1)?,
+                            is_generated: row.get::<_, Option<i64>>(2)?.unwrap_or(0) != 0,
+                            is_override: row.get::<_, Option<i64>>(3)?.unwrap_or(0) != 0,
+                            checked_runid: row.get(4)?,
+                            changed_runid: row.get(5)?,
+                            failed_runid: row.get(6)?,
+                            stamp: row.get(7)?,
+                            csum: row.get(8)?,
+                        })
+                    },
+                )
+                .ok();
 
-        if let Some(mut f) = result {
-            f.fix_always();
-            return f;
+            if let Some(mut f) = result {
+                f.fix_always();
+                return f;
+            }
         }
 
         if !allow_add {
             panic!("No file with name={:?}", name);
         }
 
-        // Insert and retry - ignore integrity error (parallel insert)
-        let _ = db.execute("insert into Files (name) values (?1)", params![name]);
+        // Insert via db_write so it participates in transaction tracking
+        db_write(
+            "insert or ignore into Files (name) values (?1)",
+            &[&name as &dyn rusqlite::ToSql],
+        );
 
+        // Re-query after insert
+        let db_guard = DB.lock().unwrap();
+        let db = db_guard.as_ref().unwrap();
         let mut f: File = db
             .query_row(
                 "select rowid, name, is_generated, is_override, \
